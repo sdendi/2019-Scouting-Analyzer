@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jan 17 19:06:04 2019
-
+                                    
 @author: Saketh
 """
 
@@ -50,12 +50,15 @@ def makeMatchList(event, year = 2018):
             Outstr = str(Match).replace('[', '').replace(']', '').replace(' ', '')+'\n'
             File.write(Outstr)
 
-def readMatchList():    
+def readMatchList(testmode):    
     '''
     Read the Match List file created by makeMatchList.     
     
     '''
-    FileName = filedialog.askopenfilename(title = 'select MatchList file')
+    if testmode : 
+        FileName = r'C:\Users\Saketh\Documents\GitHub\2018-Scouting-Analyzer\Kansas City\MatchList-mokc2.csv'
+    else :
+        FileName = filedialog.askopenfilename(title = 'select MatchList file')
     with open(FileName, 'r') as Matchlist:
        data = Matchlist.readlines()
    
@@ -72,12 +75,15 @@ def readMatchList():
     return result
 
 
-def readScout():
+def readScout(testmode):
     '''
     Read Scouting Data from a file, fix formatting to numeric where neccessary,
     clean the data, report any implausibile data.  
     '''
-    FileName = filedialog.askopenfilename(title = 'select Data file')
+    if testmode :
+        FileName = r'C:\Users\Saketh\Documents\matchScout.csv'
+    else :
+        FileName = filedialog.askopenfilename(title = 'select Data file')
     with open(FileName, 'r') as ScoutFile:
         ScoutData = pd.read_csv(ScoutFile, sep = '|') 
     Result = ScoutData.fillna(value = 0)
@@ -110,7 +116,6 @@ def FindPartners(Matchlist, team = 1939):
                 thisMatch['opponents'] = match[1:4]
                 allies.remove(team)
                 thisMatch['allies'] = allies
-            
             thisMatch['match'] = match[0] 
             result.append(thisMatch)
             
@@ -256,22 +261,24 @@ def SearchTeam(Scoutdf, PivotDf, TeamNumber, File = None):
             del temp['index']
         File.write(str(temp))
         File.write('\n<h5>Match Details</h5>\n')
-
+        
         # Make pandas stop truncating the long text fields.
         pd.set_option('display.max_colwidth', -1)
         
         # Within each write, I'm specifying columns by number, taking off the
         # decimal places, and suppressing printing of the index number
         print(Scoutdf.columns)
-        # Comments        
-        ''' File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=[1, 2, 35], float_format='{0:.0f}'.format, index=False, justify='unset'))
-        File.write('\n<br>\n')        
+        print(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns = ['team']))
         
+        # Comments        
+        File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=['match', 'team', 'Comments'], float_format='{0:.0f}'.format, index=False, justify='unset'))
+        File.write('\n<br>\n')        
+        '''
         # Calculated Fields
         File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=[1, 2, 36, 37, 38], float_format='{0:.0f}'.format, index=False))
         File.write('\n<br>\n')  
         
-        
+            
         # Auton columns
         # Good stuff
         File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=[1, 2, 4, 6, 10, 14], float_format='{0:.0f}'.format, index=False))
@@ -295,8 +302,8 @@ def SearchTeam(Scoutdf, PivotDf, TeamNumber, File = None):
         # Other Enumerated items
         File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=[1, 2, 19, 33, 34], float_format='{0:.0f}'.format, index=False))
         File.write('\n<br>\n')
-        
-                
+                 
+                 
         # Bad Stuff
         File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(columns=[1, 2, 20, 21, 22, 23, 24, 25, 26, 27], float_format='{0:.0f}'.format, index=False))
         File.write('\n<br>\n')
@@ -305,7 +312,7 @@ def SearchTeam(Scoutdf, PivotDf, TeamNumber, File = None):
         File.write(Scoutdf[Scoutdf.team == TeamNumber].to_html(float_format='{0:.0f}'.format, index=False))
         
         
-        
+                              
         
 def TeamStats(TeamDf):
     '''
@@ -378,10 +385,10 @@ def PickList(TeamDf, PivotDf, lastMatch):
     #print(TeamDf.head())
     earlyDf = TeamDf[TeamDf.match <= lastMatch]
     lateDf = TeamDf[TeamDf.match > lastMatch]
-    
-    
-    earlytelepivot = pd.pivot_table(earlyDf, values = ['avgtelecargo', 'avgtelehatch'], index = 'team', aggfunc = np.average)
-    latetelepivot = pd.pivot_table(lateDf, values = ['avgtelecargo', 'avgtelehatch'], index = 'team', aggfunc = np.average)
+        
+
+    earlytelepivot = pd.pivot_table(earlyDf, values = ['avgtelecargo'], index = 'team', aggfunc = np.average)
+    latetelepivot = pd.pivot_table(lateDf, values = ['avgtelecargo'], index = 'team', aggfunc = np.average)
     
     earlytelepivot.reset_index(inplace = True)
     latetelepivot.reset_index(inplace = True)
@@ -394,8 +401,8 @@ def PickList(TeamDf, PivotDf, lastMatch):
     deltaDf['change'] = deltaDf['avgtelecargo_late'] - deltaDf['avgtelecargo_early']
     deltaDf.sort_values('change')  
     
-    deltaDf['HatchChange'] = deltaDf['avgtelehatch_late'] - deltaDf['avgtelehatch_early']
-    deltaDf.sort_values('HatchChange')
+   # deltaDf['HatchChange'] = deltaDf['avgtelehatch_late'] - deltaDf['avgtelehatch_early']
+   # deltaDf.sort_values('HatchChange')
     
     outfile = 'Picklist.xlsx'
     with pd.ExcelWriter(outfile) as writer:
@@ -408,7 +415,7 @@ def PickList(TeamDf, PivotDf, lastMatch):
         tabname = 'Changes'
         deltaDf.to_excel(writer, tabname)
 
-
+     
 def enterTeam():
      Team = input('enter team number: ')
      if Team.isdigit():
@@ -418,7 +425,7 @@ def enterTeam():
         print('input error')
         return
 
-def Main():
+def Main(testmode):
     print('press 1 to acquire a Match List')
     print('press 2 to get a prematch Scouting Report')
     print('press 3 to get a single team report')
@@ -433,8 +440,8 @@ def Main():
         
     elif selection == '2':
         Team = enterTeam()       
-        ReadData = readScout()
-        MatchList = readMatchList()
+        ReadData = readScout(testmode)
+        MatchList = readMatchList(testmode)
         TeamDf, PivotDf = TeamStats(ReadData)
         Partners = FindPartners(MatchList, Team)
         #matchNum = FindPartners(MatchList, Team)
@@ -442,24 +449,24 @@ def Main():
         
     elif selection == '3':
         Team = int(enterTeam())       
-        ReadData = readScout()
+        ReadData = readScout(testmode)
         print(ReadData)
-        MatchList = readMatchList()
+        MatchList = readMatchList(testmode)
         TeamDf, PivotDf = TeamStats(ReadData)
         SearchTeam(TeamDf, PivotDf, Team)
     elif selection == '4':
-        ReadData = readScout()
+        ReadData = readScout(testmode)
         TeamDf, PivotDf = TeamStats(ReadData)
         Day1Report(TeamDf, PivotDf)
     elif selection == '5':
-        ReadData = readScout()
+        ReadData = readScout(testmode)
         TeamDf, PivotDf = TeamStats(ReadData)
         lastMatch = int(input('enter last match of Day 1'))
         print('boo')
         print(TeamDf.head())
         PickList(TeamDf, PivotDf, lastMatch)
     elif selection == '9':
-        ReadData = readScout()
+        ReadData = readScout(testmode)
         print(ReadData)
         TeamDf, PivotDf = TeamStats(ReadData)
         
@@ -470,7 +477,7 @@ def Main():
         print(PivotDf)
         
         
-Main()
+Main(True)
       
                 
                       
